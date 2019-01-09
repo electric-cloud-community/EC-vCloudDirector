@@ -1,0 +1,45 @@
+<editor>
+    <help>/commander/pages/@PLUGIN_NAME@/@PLUGIN_KEY@_help?s=Administration&amp;ss=Plugins#Clone</help>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Connection:</label>
+        <property>connection_config</property>
+        <required>1</required>
+        <documentation>Name of the configuration which holds the connection information for vCloudDirector. This must reference a valid existing configuration.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Organization:</label>
+        <property>vcloud_organization</property>
+        <required>1</required>
+        <documentation>Name of the organization that contains the virtual datacenter. This must reference an existing Organization in vCloud Director.</documentation>
+    </formElement>        
+    <formElement>
+        <type>entry</type>
+        <label>Virtual Data Center:</label>
+        <property>vcloud_virtual_datacenter</property>
+        <required>1</required>
+        <documentation>Name of the virtual datacenter that contains the vApp that will be cloned.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vApp Name:</label>
+        <property>vcloud_vappname</property>
+        <required>1</required>
+        <documentation>Name of the vApp that will be cloned.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>New vApp Name:</label>
+        <property>vcloud_new_vappname</property>
+        <required>1</required>
+        <documentation>Name for the new vApp.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Destination Virtual Data Center:</label>
+        <property>vcloud_dest_virtual_datacenter</property>
+        <required>1</required>
+        <documentation>Name of the virtual datacenter where the vApp will be cloned.</documentation>
+    </formElement>
+</editor>

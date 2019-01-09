@@ -1,0 +1,52 @@
+<editor>
+    <help>/commander/pages/@PLUGIN_NAME@/@PLUGIN_KEY@_help?s=Administration&amp;ss=Plugins#Capture</help>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Connection:</label>
+        <property>connection_config</property>
+        <required>1</required>
+        <documentation>Name of the configuration which holds the connection information for vCloudDirector. This must reference a valid existing configuration.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Organization:</label>
+        <property>vcloud_organization</property>
+        <required>1</required>
+        <documentation>Name of the organization that contains the virtual datacenter and the catalog. This must reference an existing Organization in vCloud Director.</documentation>
+    </formElement>  
+    <formElement>
+        <type>entry</type>
+        <label>Template Catalog:</label>
+        <property>vcloud_catalog</property>
+        <required>1</required>
+        <documentation>Name of the catalog that will contain the vApp template.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Virtual Data Center:</label>
+        <property>vcloud_virtual_datacenter</property>
+        <required>1</required>
+        <documentation>Name of the virtual datacenter that contains the vApp that will be used.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Source vApp Name:</label>
+        <property>vcloud_vappname</property>
+        <required>1</required>
+        <documentation>Name of the vApp that will be used.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>New Template Name:</label>
+        <property>vcloud_new_vapp_template_name</property>
+        <documentation>Name for the new vApp template.</documentation>
+        <required>1</required>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>New Template Description:</label>
+        <property>vcloud_new_vapp_template_desc</property>
+        <documentation>Description for the new vApp template.</documentation>
+        <required>1</required>    
+    </formElement>
+</editor>

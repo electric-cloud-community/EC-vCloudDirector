@@ -1,0 +1,135 @@
+<editor>
+    <help>/commander/pages/@PLUGIN_NAME@/@PLUGIN_KEY@_help?s=Administration&amp;ss=Plugins#Provision</help>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Connection:</label>
+        <property>connection_config</property>
+        <required>1</required>
+        <documentation>Name of the configuration which holds the connection information for vCloudDirector. This must reference a valid existing configuration.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Organization:</label>
+        <property>vcloud_organization</property>
+        <required>1</required>
+        <documentation>Name of the organization that contains the virtual datacenter and the catalog. This must reference an existing Organization in vCloud Director.</documentation>
+    </formElement>  
+    <formElement>
+        <type>entry</type>
+        <label>Template Catalog:</label>
+        <property>vcloud_catalog</property>
+        <required>1</required>
+        <documentation>Name of the catalog that contains the vApp template.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Virtual Data Center:</label>
+        <property>vcloud_virtual_datacenter</property>
+        <required>1</required>
+        <documentation>Name of the virtual datacenter where the vApp will be instantiated and deployed.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vApp Template:</label>
+        <property>vcloud_template</property>
+        <required>1</required>
+        <documentation>Name of the vApp template to instantiate.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>New vApp Name:</label>
+        <property>vcloud_vappname</property>
+        <required>1</required>
+        <documentation>Name of the new vApp.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>New vApp hostname:</label>
+        <property>vcloud_vapp_hostname</property>
+        <required>0</required>
+        <documentation>Hostname of the new vApp.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Network:</label>
+        <property>vcloud_network</property>
+        <required>0</required>
+        <documentation>Name for the network. If the vApp template includes an ovf:Network element, the name you specify for the vApp network must match the name specified in that element's ovf:name attribute.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Parent Network:</label>
+        <property>vcloud_parent_network</property>
+        <required>0</required>
+        <documentation>Name of the network to which the vApp network connects.</documentation>
+    </formElement>
+    <formElement>
+        <type>select</type>
+        <label>Network deployment:</label>
+        <property>vcloud_fenced_mode</property>
+        <required>0</required>
+        <value>bridged</value>
+        <documentation>How the network of the vApp is connected to the parent network.</documentation>
+        <option>
+            <name>bridged</name>
+            <value>bridged</value>
+        </option>
+        <option>
+            <name>isolated</name>
+            <value>isolated</value>
+        </option>
+        <option>
+            <name>natRouted</name>
+            <value>natRouted</value>
+        </option>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Resource Pool(s):</label>
+        <property>pools</property>
+        <required>0</required>
+        <documentation>The ElectricCommander resource pool names to be associated with the machines in this configuration if resources are created.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Results location:</label>
+        <property>results</property>
+        <required>0</required>
+        <documentation>The ElectricCommander location to store properties (default is /myJob/vCloudDirector/deployed).</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Provision tag:</label>
+        <property>tag</property>
+        <required>1</required>
+        <value>&#36;[jobStepId]</value>
+        <documentation>The unique tag for this provision to keep it separate from other provisions stored in the same results area(default is &#36;[jobStepId]).</documentation>
+    </formElement>
+    <formElement>
+        <type>checkbox</type>
+        <label>Create resource?:</label>
+        <property>vcloud_create_resource</property>
+        <checkedValue>1</checkedValue>
+        <uncheckedValue>0</uncheckedValue>
+        <initiallyChecked>1</initiallyChecked>
+        <documentation>Select if the procedure must create resource for VM in this vApp.</documentation>
+        <required>0</required>
+    </formElement>
+    <formElement>
+      <type>checkbox</type>
+      <label>Poweroff machine after provision?:</label>
+      <property>vcloud_poweroff_vapp</property>
+      <checkedValue>1</checkedValue>
+      <uncheckedValue>0</uncheckedValue>
+      <initiallyChecked>0</initiallyChecked>
+      <documentation>Select if the vApp should be powered off after provision.</documentation>
+      <required>0</required>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>DNS wait time:</label>
+        <property>vcloud_dns_wait_time</property>
+        <required>0</required>
+        <documentation>Wait time for slow DNS servers.</documentation>
+    </formElement>
+</editor>

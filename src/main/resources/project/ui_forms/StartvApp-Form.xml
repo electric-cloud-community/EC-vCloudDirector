@@ -1,0 +1,64 @@
+<editor>
+    <help>/commander/pages/@PLUGIN_NAME@/@PLUGIN_KEY@_help?s=Administration&amp;ss=Plugins#StartvApp</help>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Connection:</label>
+        <property>connection_config</property>
+        <required>1</required>
+        <documentation>Name of the configuration which holds the connection information for vCloudDirector. This must reference a valid existing configuration.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Organization:</label>
+        <property>vcloud_organization</property>
+        <required>1</required>
+        <documentation>Name of the organization that contains the virtual datacenter. This must reference an existing Organization in vCloud Director.</documentation>
+    </formElement>        
+    <formElement>
+        <type>entry</type>
+        <label>Virtual Data Center:</label>
+        <property>vcloud_virtual_datacenter</property>
+        <required>1</required>
+        <documentation>Name of the virtual datacenter that contains the vApp.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vApp Name:</label>
+        <property>vcloud_vappname</property>
+        <required>1</required>
+        <documentation>Name of the vApp that will be deployed/powered on.</documentation>
+    </formElement>
+    <formElement>
+        <type>checkbox</type>
+        <label>Create resources?:</label>
+        <property>vcloud_create_resource</property>
+        <checkedValue>1</checkedValue>
+        <uncheckedValue>0</uncheckedValue>
+        <initiallyChecked>1</initiallyChecked>
+        <documentation>Select if the procedure must create resources for VMs in this vApp.</documentation>
+        <required>0</required>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Resource Pool(s):</label>
+        <property>pools</property>
+        <required>0</required>
+        <documentation>The ElectricCommander resource pool names to be associated with the machines in this configuration if resources are created.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Results location:</label>
+        <property>results</property>
+        <required>0</required>
+        <value>/myJob/vCloudDirector/deployed</value>
+        <documentation>The ElectricCommander location to store properties (default is /myJob/vCloudDirector/deployed).</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Results tag:</label>
+        <property>tag</property>
+        <required>1</required>
+        <value>&#36;[jobStepId]</value>
+        <documentation>Tag to store the deployed vApp information.</documentation>
+    </formElement>        
+</editor>

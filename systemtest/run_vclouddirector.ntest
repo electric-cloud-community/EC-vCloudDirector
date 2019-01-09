@@ -1,0 +1,886 @@
+# -*-Perl-*-
+
+# runvclouddirector.ntest -
+#
+# System tests for EC-vCloudDirector plugin
+#
+# Copyright (c) 2005-2011 Electric Cloud, Inc.
+# All rights reserved
+
+use strict;
+use ECTest;
+use ECSelenium;
+use Socket;
+use Sys::Hostname;
+
+# read in setup and tests that are common to all plugins
+# system tests
+require "$::gTestFileDir/ntest.common";
+
+$::gProjectImported = 0;
+$::gConfigCreated   = 0;
+$::gServerRunning   = 0;
+$::gtestProjectName = 'vCloudDirectorTest';
+
+$::gRunTest = 0;
+
+$::gHostname = hostname();
+$::gIPAddress = 
+  inet_ntoa( scalar( gethostbyname($::gHostname) ) || 'localhost' );
+  
+  
+  
+
+sub importProject() {
+    assertOK(
+        $::N->import(
+            {
+                file => "$::gTestFileDir/fakedata/vCloudDirectorSystemTest.xml",
+                path => "/projects/vCloudDirectorTest",
+                force => 1
+            }
+        ),
+        "import vCloudDirectorTest project"
+    );
+
+    assertOK( $::N->getProcedure( $::gtestProjectName, 'Provision' ),
+        "Provision procedure exists" );
+
+    assertOK( $::N->getProcedure( $::gtestProjectName, 'CleanUp' ),
+        "CleanUp procedure exists" );
+
+    assertOK( $::N->getProcedure( $::gtestProjectName, 'Clone' ),
+        "Clone procedure exists" );
+
+    $::gProjectImported = 1;
+}
+
+sub createConfig() {
+    my $xpath = $::N->runProcedure(
+        "$::gPlugin_name",
+        {
+            procedureName   => "CreateConfiguration",
+            pollInterval    => '0.2',
+            timeout         => 600,
+            actualParameter => [
+                {
+                    actualParameterName => 'config',
+                    value               => 'vCDTestConfiguration'
+                },
+                {
+                    actualParameterName => 'desc',
+                    value               => 'vCloudDirector configuration'
+                },
+                {
+                    actualParameterName => 'vclouddirector_url',
+                    value               => "http://$::gIPAddress:$::gAuxPort"
+                },
+                {
+                    actualParameterName => 'attempt',
+                    value               => "0"
+                },
+                {
+                    actualParameterName => 'retry_on_failure',
+                    value               => "0"
+                },
+                {
+                    actualParameterName => 'retry_interval',
+                    value               => "5"
+                },
+                {
+                    actualParameterName => 'retry_attempts_count',
+                    value               => "10"
+                },
+                { actualParameterName => 'credential', value => 'test' },
+                {
+                    actualParameterName => 'vclouddirector_conf_org',
+                    value               => 'Dev'
+                },
+                { actualParameterName => 'debug', value => '1' },
+            ],
+            credential => [
+                {
+                    credentialName => 'test',
+                    userName       => "dev",
+                    password       => "vCloudD1",
+                },
+            ],
+        }
+    );
+
+    assertOK( $xpath, "run create configuration procedure" );
+
+    # make sure it finished
+    my $jobId  = 0;
+    my $status = "";
+    assertDef( $xpath, "runProcedure finished without a timeout" );
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq( 'completed', $status, "job $jobId complete" );
+
+        #abort if job did not finish
+        if ( $status ne "completed" ) {
+            assertOK( $::N->abortJob( $jobId, { force => 1 } ) );
+        }
+    }
+
+    # examine log files
+    $xpath = $::N->getJobDetails($jobId);
+
+    writeFile(
+        "$::gCurrentTestDir/../createConfiguration.log",
+        "====Job Details====\n$xpath->{_xml}\n"
+    );
+
+    # check that the config and credential exist
+    $xpath = $::N->getProperty(
+"/projects/$::vCloudDirector/vclouddirector_cfgs/vCDTestConfiguration/desc"
+    );
+    $::N->setProperty("/projects/$::vCloudDirector/vclouddirector_cfgs/vCDTestConfiguration/api_login", "http://$::gIPAddress:$::gAuxPort/api/v1.0/login");
+    assertEq(
+        "vCloudDirector configuration",
+        $xpath->findvalue("//value")->string_value,
+        "Configuration description"
+    );
+    $xpath = $::N->getCredential( "$::vCloudDirector", "vCDTestConfiguration" );
+    assertEq(
+        "dev",
+        $xpath->findvalue("//userName")->string_value,
+        'Credential user'
+    );
+
+    $::gConfigCreated = 1;
+}
+
+sub runServer() {
+    my $responses = "$::gTestFileDir/fakedata/http_responses";
+    my $existfile = "'$::gCurrentTestDir/../port-ntest-http.log'";
+
+    # Delete exist file in case it was left over from previous test
+    unlink $existfile;
+
+    my $cmdline = qq{"$^X" }
+      . qq{"$::gTestFileDir/fakeserver/http/fakeHTTPServer.pl" }
+      . "--log=../ntest-http.log "
+      . "--ip=$::gIPAddress "
+      . "--port=$::gAuxPort "
+      . "--data=$responses ";
+
+    open( SERVER, "-|", $cmdline );
+
+    # Wait (up to) a minute until the 'exists' file is created
+    my $timeout = 60;
+    while ( !-f $existfile and $timeout > 0 ) {
+        $timeout -= 1;
+        sleep(1);
+    }
+    $::gAuxPort = `cat $existfile`;
+
+    $::gServerRunning = 1;
+}
+
+sub stopServer () {
+
+    # Create client to send 'Quit' request to server
+    require LWP::UserAgent;
+    my $userAgent = LWP::UserAgent->new;
+    my $request =
+      HTTP::Request->new( 'POST', "http://$::gIPAddress:$::gAuxPort/" );
+    $request->content('Action=Quit');
+    $userAgent->request($request);
+
+    $::gServerRunning = 0;
+}
+
+sub doSetup() {
+    if ( !$::gServerRunning ) {
+        runServer();
+    }
+
+    if ( !$::gProjectImported ) {
+        importProject();
+    }
+
+    if ( !$::gConfigCreated ) {
+        createConfig();
+    }
+}
+
+################################
+# check-components-present - Check that the plugin contains required components
+#
+# Arguments:
+#   none
+#
+# Returns:
+#   none
+#
+################################
+
+ntest 'check-components-present', {}, sub {
+
+    # Check that the plugin contains required components
+
+    my $xpath;
+    $xpath = $::N->getSteps( "$::gPlugin_name", "CreateConfiguration" );
+    assertOK( $xpath, "CreateConfiguration" );
+    assertEq(
+        "CreateConfiguration",
+        $xpath->findvalue("//step[1]/stepName"),
+        "Step 1 is CreateConfiguration"
+    );
+    assertEq(
+        "CreateAndAttachCredential",
+        $xpath->findvalue("//step[2]/stepName"),
+        "Step 2 is CreateAndAttachCredential"
+    );
+
+    $xpath = $::N->getSteps( "$::gPlugin_name", "DeleteConfiguration" );
+    assertOK( $xpath, "DeleteConfiguration" );
+    assertEq(
+        "DeleteConfiguration",
+        $xpath->findvalue("//step[1]/stepName"),
+        "Step 1 is DeleteConfiguration"
+    );
+
+    $xpath = $::N->getSteps( "$::gPlugin_name", "Provision" );
+    assertOK( $xpath, "Provision" );
+    assertEq(
+        "Provision",
+        $xpath->findvalue("//step[1]/stepName"),
+        "Step 1 is Provision"
+    );
+
+    $xpath = $::N->getSteps( "$::gPlugin_name", "Clone" );
+    assertOK( $xpath, "Clone" );
+    assertEq(
+        "Clone",
+        $xpath->findvalue("//step[1]/stepName"),
+        "step 1 is Clone"
+    );
+
+    $xpath = $::N->getSteps( "$::gPlugin_name", "Cleanup" );
+    assertOK( $xpath, "Cleanup" );
+    assertEq(
+        "Cleanup",
+        $xpath->findvalue("//step[1]/stepName"),
+        "Step 1 is Cleanup"
+    );
+    
+     $xpath = $::N->getSteps( "$::gPlugin_name", "Capture" );
+    assertOK( $xpath, "Capture" );
+    assertEq(
+        "Capture",
+        $xpath->findvalue("//step[1]/stepName"),
+        "Step 1 is Capture"
+    );
+
+};
+
+################################
+# Eval vCloudDirector Driver - Test loading vCloudDirector driver
+#
+# Arguments:
+#   none
+#
+# Returns:
+#   none
+#
+################################
+ntest "Eval vCloudDirector Driver", {}, sub {
+    use ElectricCommander::PropMod;
+
+    # Load perl code from running Commander
+    ElectricCommander::PropMod::loadPerlCodeFromProperty( $::N,
+        "/projects/$::gPlugin_name/vclouddirector_driver/vCloudDirector" );
+    my $gd = new vCloudDirector();
+};
+
+ntest "test Provision successful", {}, sub {
+    doSetup();
+
+    # run test job
+    my $xpath = $::N->runProcedure(
+        $::gtestProjectName,
+        {
+            procedureName   => "Provision",
+            pollInterval    => '1',
+            timeout         => 600,
+            actualParameter => []
+        }
+    );
+
+    # make sure it finished
+    my $jobId  = 0;
+    my $jobStepId = 0;
+    my $status = "";
+
+    assertOK( $xpath, 'runProcedure finished' );
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq( 'completed', $status, "job $jobId complete" );
+
+        #abort if job did not finish
+        if ( $status ne "completed" ) {
+            assertOK( $::N->abortJob( $jobId, { force => 1 } ) );
+        }
+    }
+
+    # get the job details
+    $xpath = $::N->getJobDetails($jobId);
+
+    # Get the root of log files. use UNC so it works from
+    # command line as well as within a CMD step
+    my $ws = $xpath->findvalue("//workspace/winUNC");
+    if ( !isWindows() ) {
+        $ws = $xpath->findvalue("//workspace/unix");
+    }
+
+    
+    # Get the name of the log file
+    my $logFileName = $ws . "/"
+      . $xpath->findvalue("//jobStep[stepName='Provision']/logFileName");
+
+    # Get the jobStepId for Provision
+$jobStepId  =  $xpath->findvalue("//jobStep[stepName='Step 1']/jobStepId");
+      
+    # Read the log file and verify its contents.
+    my $data = readFile($logFileName);
+
+    # write the job details to a file in the test directory
+    writeFile( "$::gCurrentTestDir/Provision.log",
+        "====Job Details====\n$xpath->{_xml}\n====LOG====\n$data\n" );
+
+    my $expectedOutput = "";
+    $expectedOutput .= "Using plugin EC-vCloudDirector version " . $::gPlugin_ver . "\n";
+    $expectedOutput .= "Loading config vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config vclouddirector_url = http://$::gIPAddress:$::gAuxPort\n";
+    $expectedOutput .= "Adding config retry_on_failure = 0\n";
+    $expectedOutput .= "Adding config retry_attempts_count = 10\n";
+    $expectedOutput .= "Adding config vclouddirector_conf_org = Dev\n";
+    $expectedOutput .= "Adding config api_version = 1.0\n";
+    $expectedOutput .= "Adding config api_login = http://$::gIPAddress:$::gAuxPort/api/v1.0/login\n";
+    $expectedOutput .= "Adding config attempt = 0\n";
+
+    $expectedOutput .= "Adding config desc = vCloudDirector configuration\n";
+    $expectedOutput .= "Adding config debug = 1\n";
+    $expectedOutput .= "Adding config credential = vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config retry_interval = 5\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .=
+      "Log in to  'http://$::gIPAddress:$::gAuxPort/api/v1.0/login'\n";
+    $expectedOutput .= "    Authentication status: 200 OK\n";
+    $expectedOutput .=
+      "Instantiating the template 'w2k8-64-dev' to create vApp 'vCDTest'...\n";
+    $expectedOutput .= "...\n";
+    $expectedOutput .= "Template 'w2k8-64-dev' succesfully instantiated\n";
+    $expectedOutput .= "Deploying vApp 'vCDTest'...\n";
+    $expectedOutput .= "vApp 'vCDTest' succesfully deployed\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .= "Getting information of virtual machine 'w2k8-r2-dev'...\n";
+    $expectedOutput .= "Storing properties...\n";
+    $expectedOutput .= "VM: w2k8-r2-dev\n";
+    $expectedOutput .= "Href: http://vcloudserver/api/v1.0/vApp/7\n";
+    $expectedOutput .= "Network: New Dev Net\n";
+    $expectedOutput .= "IP address: 127.0.0.1\n";
+    $expectedOutput .= "External IP address: \n";
+    $expectedOutput .= "Mac address: 00:50:56:01:00:33\n";
+    $expectedOutput .= "IsConnected: true\n";
+    $expectedOutput .= "vApp: vCDTest\n";
+    $expectedOutput .= "Organization: Dev\n";
+    $expectedOutput .= "VDC: Dev Org\n";
+    $expectedOutput .= "Creating resource for virtual machine 'w2k8-r2-dev'...\n";
+    $expectedOutput .= "Resource created\n";
+    $expectedOutput .= "Adding w2k8-r2-dev-$jobId-$jobStepId to instance list\n";
+    $expectedOutput .= "Waiting for ping response #(100) of resource w2k8-r2-dev-$jobId-$jobStepId with IP 127.0.0.1\n";
+    $expectedOutput .= "Ping response succesfully received\n";
+    $expectedOutput .= "Created resource for 'w2k8-r2-dev' as w2k8-r2-dev-$jobId-$jobStepId\n";
+    $expectedOutput .= "Saving vm list w2k8-r2-dev-$jobId-$jobStepId\n";
+    
+    
+    
+
+    assertDiff( outdent($expectedOutput), $data,
+        'Provision successful output' );
+};
+
+ntest "test Clone successful", {}, sub {
+    doSetup();
+
+    # run test job
+    my $xpath = $::N->runProcedure(
+        $::gtestProjectName,
+        {
+            procedureName   => "Clone",
+            pollInterval    => '1',
+            timeout         => 600,
+            actualParameter => []
+        }
+    );
+
+    # make sure it finished
+    my $jobId  = 0;
+    my $status = "";
+
+    assertOK( $xpath, 'runProcedure finished' );
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq( 'completed', $status, "job $jobId complete" );
+
+        #abort if job did not finish
+        if ( $status ne "completed" ) {
+            assertOK( $::N->abortJob( $jobId, { force => 1 } ) );
+        }
+    }
+
+    # get the job details
+    $xpath = $::N->getJobDetails($jobId);
+
+    # Get the root of log files. use UNC so it works from
+    # command line as well as within a CMD step
+    my $ws = $xpath->findvalue("//workspace/winUNC");
+    if ( !isWindows() ) {
+        $ws = $xpath->findvalue("//workspace/unix");
+    }
+
+    # Get the name of the log file
+    my $logFileName =
+      $ws . "/" . $xpath->findvalue("//jobStep[stepName='Clone']/logFileName");
+
+    # Read the log file and verify its contents.
+    my $data = readFile($logFileName);
+
+    # write the job details to a file in the test directory
+    writeFile( "$::gCurrentTestDir/Clone.log",
+        "====Job Details====\n$xpath->{_xml}\n====LOG====\n$data\n" );
+
+    my $expectedOutput = "";
+    $expectedOutput .= "Using plugin EC-vCloudDirector version " . $::gPlugin_ver . "\n";
+    $expectedOutput .= "Loading config vCDTestConfiguration\n";
+
+    $expectedOutput .= "Adding config vclouddirector_url = http://$::gIPAddress:$::gAuxPort\n";
+    $expectedOutput .= "Adding config retry_on_failure = 0\n";
+    $expectedOutput .= "Adding config retry_attempts_count = 10\n";
+    $expectedOutput .= "Adding config vclouddirector_conf_org = Dev\n";
+    $expectedOutput .= "Adding config api_version = 1.0\n";
+    $expectedOutput .= "Adding config api_login = http://$::gIPAddress:$::gAuxPort/api/v1.0/login\n";
+    $expectedOutput .= "Adding config attempt = 0\n";
+
+    $expectedOutput .= "Adding config desc = vCloudDirector configuration\n";
+    $expectedOutput .= "Adding config debug = 1\n";
+    $expectedOutput .= "Adding config credential = vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config retry_interval = 5\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .=
+      "Log in to  'http://$::gIPAddress:$::gAuxPort/api/v1.0/login'\n";
+    $expectedOutput .= "    Authentication status: 200 OK\n";
+    $expectedOutput .= "Cloning vApp 'vCDTest'...\n";
+    $expectedOutput .= "...\n";
+    $expectedOutput .=
+      "vApp 'vCDTest' succesfully cloned to new vApp 'vCDTestClone'\n";
+
+    assertDiff( outdent($expectedOutput), $data, 'Clone successful output' );
+};
+
+ntest "test Cleanup successful", {}, sub {
+    doSetup();
+
+    # run test job
+    my $xpath = $::N->runProcedure(
+        $::gtestProjectName,
+        {
+            procedureName   => "Cleanup",
+            pollInterval    => '1',
+            timeout         => 600,
+            actualParameter => []
+        }
+    );
+
+    # make sure it finished
+    my $jobId  = 0;
+    my $status = "";
+
+    assertOK( $xpath, 'runProcedure finished' );
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq( 'completed', $status, "job $jobId complete" );
+
+        #abort if job did not finish
+        if ( $status ne "completed" ) {
+            assertOK( $::N->abortJob( $jobId, { force => 1 } ) );
+        }
+    }
+
+    # get the job details
+    $xpath = $::N->getJobDetails($jobId);
+
+    # Get the root of log files. use UNC so it works from
+    # command line as well as within a CMD step
+    my $ws = $xpath->findvalue("//workspace/winUNC");
+    if ( !isWindows() ) {
+        $ws = $xpath->findvalue("//workspace/unix");
+    }
+
+    # Get the name of the log file
+    my $logFileName = $ws . "/"
+      . $xpath->findvalue("//jobStep[stepName='Cleanup']/logFileName");
+
+    # Read the log file and verify its contents.
+    my $data = readFile($logFileName);
+
+    # write the job details to a file in the test directory
+    writeFile( "$::gCurrentTestDir/Cleanup.log",
+        "====Job Details====\n$xpath->{_xml}\n====LOG====\n$data\n" );
+
+    my $expectedOutput = "";
+    $expectedOutput .= "Using plugin EC-vCloudDirector version " . $::gPlugin_ver . "\n";
+    $expectedOutput .= "Loading config vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config vclouddirector_url = http://$::gIPAddress:$::gAuxPort\n";
+    $expectedOutput .= "Adding config retry_on_failure = 0\n";
+    $expectedOutput .= "Adding config retry_attempts_count = 10\n";
+    $expectedOutput .= "Adding config vclouddirector_conf_org = Dev\n";
+    $expectedOutput .= "Adding config api_version = 1.0\n";
+    $expectedOutput .= "Adding config api_login = http://$::gIPAddress:$::gAuxPort/api/v1.0/login\n";
+    $expectedOutput .= "Adding config attempt = 0\n";
+
+    $expectedOutput .= "Adding config desc = vCloudDirector configuration\n";
+    $expectedOutput .= "Adding config debug = 1\n";
+    $expectedOutput .= "Adding config credential = vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config retry_interval = 5\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .=
+      "Log in to  'http://$::gIPAddress:$::gAuxPort/api/v1.0/login'\n";
+    $expectedOutput .= "    Authentication status: 200 OK\n";
+    $expectedOutput .= "Undeploying vApp 'vCDTest'...\n";
+    $expectedOutput .= "vApp 'vCDTest' succesfully undeployed\n";
+    $expectedOutput .= "Cleaning up resources\n";
+    $expectedOutput .= "Deleting vApp 'vCDTest'...\n";
+    $expectedOutput .= "vApp 'vCDTest' succesfully deleted\n";
+
+    assertDiff( outdent($expectedOutput), $data, 'Cleanup successful output' );
+};
+
+ntest "test Provision & Cleanup successful", {}, sub {
+    doSetup();
+
+    # run test job
+    my $xpath = $::N->runProcedure(
+        $::gtestProjectName,
+        {
+            procedureName   => "Provision & Cleanup",
+            pollInterval    => '1',
+            timeout         => 600,
+            actualParameter => []
+        }
+    );
+
+    # make sure it finished
+    my $jobId  = 0;
+    my $jobStepId = 0;
+    my $status = "";
+
+    assertOK( $xpath, 'runProcedure finished' );
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq( 'completed', $status, "job $jobId complete" );
+
+        #abort if job did not finish
+        if ( $status ne "completed" ) {
+            assertOK( $::N->abortJob( $jobId, { force => 1 } ) );
+        }
+    }
+
+    # get the job details
+    $xpath = $::N->getJobDetails($jobId);
+
+    # Get the root of log files. use UNC so it works from
+    # command line as well as within a CMD step
+    my $ws = $xpath->findvalue("//workspace/winUNC");
+    if ( !isWindows() ) {
+        $ws = $xpath->findvalue("//workspace/unix");
+    }
+
+    ##Provision
+    # Get the name of the log file
+    my $logFileName = $ws . "/"
+      . $xpath->findvalue("//jobStep[stepName='Provision']/logFileName");
+
+    # Get the jobStepId for Provision
+    $jobStepId  =  $xpath->findvalue("//jobStep[stepName='Step 1']/jobStepId");
+      
+    # Read the log file and verify its contents.
+    my $data = readFile($logFileName);
+
+    # write the job details to a file in the test directory
+    writeFile( "$::gCurrentTestDir/Provision.log",
+        "====Job Details====\n$xpath->{_xml}\n====LOG====\n$data\n" );
+
+    my $expectedOutput = "";
+    $expectedOutput .=
+      "Using plugin EC-vCloudDirector version " . $::gPlugin_ver . "\n";
+    $expectedOutput .= "Loading config vCDTestConfiguration\n";
+
+    $expectedOutput .= "Adding config vclouddirector_url = http://$::gIPAddress:$::gAuxPort\n";
+    $expectedOutput .= "Adding config retry_on_failure = 0\n";
+    $expectedOutput .= "Adding config retry_attempts_count = 10\n";
+    $expectedOutput .= "Adding config vclouddirector_conf_org = Dev\n";
+    $expectedOutput .= "Adding config api_version = 1.0\n";
+    $expectedOutput .= "Adding config api_login = http://$::gIPAddress:$::gAuxPort/api/v1.0/login\n";
+    $expectedOutput .= "Adding config attempt = 0\n";
+
+    $expectedOutput .= "Adding config desc = vCloudDirector configuration\n";
+    $expectedOutput .= "Adding config debug = 1\n";
+    $expectedOutput .= "Adding config credential = vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config retry_interval = 5\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .= "Log in to  'http://$::gIPAddress:$::gAuxPort/api/v1.0/login'\n";
+    $expectedOutput .= "    Authentication status: 200 OK\n";
+    $expectedOutput .= "Instantiating the template 'w2k8-64-dev' to create vApp 'vCDTest'...\n";
+    $expectedOutput .= "...\n";
+    $expectedOutput .= "Template 'w2k8-64-dev' succesfully instantiated\n";
+    $expectedOutput .= "Deploying vApp 'vCDTest'...\n";
+    $expectedOutput .= "vApp 'vCDTest' succesfully deployed\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .= "Getting information of virtual machine 'w2k8-r2-dev'...\n";
+    $expectedOutput .= "Storing properties...\n";
+    $expectedOutput .= "VM: w2k8-r2-dev\n";
+    $expectedOutput .= "Href: http://vcloudserver/api/v1.0/vApp/7\n";
+    $expectedOutput .= "Network: New Dev Net\n";
+    $expectedOutput .= "IP address: 127.0.0.1\n";
+    $expectedOutput .= "External IP address: \n";
+    $expectedOutput .= "Mac address: 00:50:56:01:00:33\n";
+    $expectedOutput .= "IsConnected: true\n";
+    $expectedOutput .= "vApp: vCDTest\n";
+    $expectedOutput .= "Organization: Dev\n";
+    $expectedOutput .= "VDC: Dev Org\n";
+    $expectedOutput .= "Creating resource for virtual machine 'w2k8-r2-dev'...\n";
+    $expectedOutput .= "Resource created\n";
+    $expectedOutput .= "Adding w2k8-r2-dev-$jobId-test to instance list\n";
+    $expectedOutput .= "Waiting for ping response #(100) of resource w2k8-r2-dev-$jobId-test with IP 127.0.0.1\n";
+    $expectedOutput .= "Ping response succesfully received\n";
+    $expectedOutput .= "Created resource for 'w2k8-r2-dev' as w2k8-r2-dev-$jobId-test\n";
+    $expectedOutput .= "Saving vm list w2k8-r2-dev-$jobId-test\n";
+    
+    assertDiff( outdent($expectedOutput), $data,
+        'Provision successful output' );
+        
+        
+        
+    ## Cleanup    
+    # Get the name of the log file
+    my $logFileName = $ws . "/"
+      . $xpath->findvalue("//jobStep[stepName='Cleanup']/logFileName");
+
+    # Read the log file and verify its contents.
+    my $data = readFile($logFileName);
+
+    # write the job details to a file in the test directory
+    writeFile( "$::gCurrentTestDir/Cleanup.log",
+        "====Job Details====\n$xpath->{_xml}\n====LOG====\n$data\n" );
+
+    my $expectedOutput = "";
+    $expectedOutput .=
+      "Using plugin EC-vCloudDirector version " . $::gPlugin_ver . "\n";
+    $expectedOutput .= "Loading config vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config vclouddirector_url = http://$::gIPAddress:$::gAuxPort\n";
+    $expectedOutput .= "Adding config retry_on_failure = 0\n";
+    $expectedOutput .= "Adding config retry_attempts_count = 10\n";
+
+    $expectedOutput .= "Adding config vclouddirector_conf_org = Dev\n";
+    $expectedOutput .= "Adding config api_version = 1.0\n";
+    $expectedOutput .= "Adding config api_login = http://$::gIPAddress:$::gAuxPort/api/v1.0/login\n";
+    $expectedOutput .= "Adding config attempt = 0\n";
+
+    $expectedOutput .= "Adding config desc = vCloudDirector configuration\n";
+    $expectedOutput .= "Adding config debug = 1\n";
+    $expectedOutput .= "Adding config credential = vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config retry_interval = 5\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .= "Log in to  'http://$::gIPAddress:$::gAuxPort/api/v1.0/login'\n";
+    $expectedOutput .= "    Authentication status: 200 OK\n";
+    $expectedOutput .= "Undeploying vApp 'vCDTest'...\n";
+    $expectedOutput .= "vApp 'vCDTest' succesfully undeployed\n";
+    $expectedOutput .= "Found deployed resource w2k8-r2-dev-$jobId-test\n";
+    $expectedOutput .= "Cleaning up resources\n";
+      $expectedOutput .= "Deleting resource w2k8-r2-dev-$jobId-test\n";  
+     $expectedOutput .= "Resource 'w2k8-r2-dev-$jobId-test' deleted.\n";   
+    $expectedOutput .= "Deleting vApp 'vCDTest'...\n";
+    $expectedOutput .= "vApp 'vCDTest' succesfully deleted\n";
+    
+    assertDiff( outdent($expectedOutput), $data, 'Cleanup successful output' );    
+      
+};
+
+ntest "test Provision, Use & Cleanup successful", {}, sub {
+    doSetup();
+
+    # run test job
+    my $xpath = $::N->runProcedure(
+        $::gtestProjectName,
+        {
+            procedureName   => "Provision, Use & Cleanup",
+            pollInterval    => '1',
+            timeout         => 600,
+            actualParameter => []
+        }
+    );
+
+    # make sure it finished
+    my $jobId  = 0;
+    my $jobStepId = 0;
+    my $status = "";
+
+    assertOK( $xpath, 'runProcedure finished' );
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq( 'completed', $status, "job $jobId complete" );
+
+        #abort if job did not finish
+        if ( $status ne "completed" ) {
+            assertOK( $::N->abortJob( $jobId, { force => 1 } ) );
+        }
+    }
+
+    # get the job details
+    $xpath = $::N->getJobDetails($jobId);
+
+    # Get the root of log files. use UNC so it works from
+    # command line as well as within a CMD step
+    my $ws = $xpath->findvalue("//workspace/winUNC");
+    if ( !isWindows() ) {
+        $ws = $xpath->findvalue("//workspace/unix");
+    }
+
+    ##Provision
+    # Get the name of the log file
+    my $logFileName = $ws . "/"
+      . $xpath->findvalue("//jobStep[stepName='Provision']/logFileName");
+
+    # Get the jobStepId for Provision
+    $jobStepId  =  $xpath->findvalue("//jobStep[stepName='Step 1']/jobStepId");
+      
+    # Read the log file and verify its contents.
+    my $data = readFile($logFileName);
+
+    # write the job details to a file in the test directory
+    writeFile( "$::gCurrentTestDir/Provision.log",
+        "====Job Details====\n$xpath->{_xml}\n====LOG====\n$data\n" );
+
+    my $expectedOutput = "";
+    $expectedOutput .=
+      "Using plugin EC-vCloudDirector version " . $::gPlugin_ver . "\n";
+    $expectedOutput .= "Loading config vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config vclouddirector_url = http://$::gIPAddress:$::gAuxPort\n";
+    $expectedOutput .= "Adding config retry_on_failure = 0\n";
+    $expectedOutput .= "Adding config retry_attempts_count = 10\n";
+    $expectedOutput .= "Adding config vclouddirector_conf_org = Dev\n";
+    $expectedOutput .= "Adding config api_version = 1.0\n";
+    $expectedOutput .= "Adding config api_login = http://$::gIPAddress:$::gAuxPort/api/v1.0/login\n";
+    $expectedOutput .= "Adding config attempt = 0\n";
+
+    $expectedOutput .= "Adding config desc = vCloudDirector configuration\n";
+    $expectedOutput .= "Adding config debug = 1\n";
+    $expectedOutput .= "Adding config credential = vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config retry_interval = 5\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .=
+      "Log in to  'http://$::gIPAddress:$::gAuxPort/api/v1.0/login'\n";
+    $expectedOutput .= "    Authentication status: 200 OK\n";
+    $expectedOutput .=
+      "Instantiating the template 'w2k8-64-dev' to create vApp 'vCDTest'...\n";
+    $expectedOutput .= "...\n";
+    $expectedOutput .= "Template 'w2k8-64-dev' succesfully instantiated\n";
+    $expectedOutput .= "Deploying vApp 'vCDTest'...\n";
+    $expectedOutput .= "vApp 'vCDTest' succesfully deployed\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .= "Getting information of virtual machine 'w2k8-r2-dev'...\n";
+    $expectedOutput .= "Storing properties...\n";
+    $expectedOutput .= "VM: w2k8-r2-dev\n";
+    $expectedOutput .= "Href: http://vcloudserver/api/v1.0/vApp/7\n";
+    $expectedOutput .= "Network: New Dev Net\n";
+    $expectedOutput .= "IP address: 127.0.0.1\n";
+    $expectedOutput .= "External IP address: \n";
+    $expectedOutput .= "Mac address: 00:50:56:01:00:33\n";
+    $expectedOutput .= "IsConnected: true\n";
+    $expectedOutput .= "vApp: vCDTest\n";
+    $expectedOutput .= "Organization: Dev\n";
+    $expectedOutput .= "VDC: Dev Org\n";
+    $expectedOutput .= "Creating resource for virtual machine 'w2k8-r2-dev'...\n";
+    $expectedOutput .= "Resource created\n";
+    $expectedOutput .= "Adding w2k8-r2-dev-$jobId-test to instance list\n";
+    $expectedOutput .= "Waiting for ping response #(100) of resource w2k8-r2-dev-$jobId-test with IP 127.0.0.1\n";
+    $expectedOutput .= "Ping response succesfully received\n";
+    $expectedOutput .= "Created resource for 'w2k8-r2-dev' as w2k8-r2-dev-$jobId-test\n";
+    $expectedOutput .= "Saving vm list w2k8-r2-dev-$jobId-test\n";
+    
+    assertDiff( outdent($expectedOutput), $data,
+        'Provision successful output' );  
+        
+    ## Cleanup    
+    # Get the name of the log file
+    my $logFileName = $ws . "/"
+      . $xpath->findvalue("//jobStep[stepName='Cleanup']/logFileName");
+
+    # Read the log file and verify its contents.
+    my $data = readFile($logFileName);
+
+    # write the job details to a file in the test directory
+    writeFile( "$::gCurrentTestDir/Cleanup.log",
+        "====Job Details====\n$xpath->{_xml}\n====LOG====\n$data\n" );
+
+    my $expectedOutput = "";
+    $expectedOutput .= "Using plugin EC-vCloudDirector version " . $::gPlugin_ver . "\n";
+    $expectedOutput .= "Loading config vCDTestConfiguration\n";
+
+    $expectedOutput .= "Adding config vclouddirector_url = http://$::gIPAddress:$::gAuxPort\n";
+    $expectedOutput .= "Adding config retry_on_failure = 0\n";
+    $expectedOutput .= "Adding config retry_attempts_count = 10\n";
+    $expectedOutput .= "Adding config vclouddirector_conf_org = Dev\n";
+    $expectedOutput .= "Adding config api_version = 1.0\n";
+    $expectedOutput .= "Adding config api_login = http://$::gIPAddress:$::gAuxPort/api/v1.0/login\n";
+    $expectedOutput .= "Adding config attempt = 0\n";
+
+    $expectedOutput .= "Adding config desc = vCloudDirector configuration\n";
+    $expectedOutput .= "Adding config debug = 1\n";
+    $expectedOutput .= "Adding config credential = vCDTestConfiguration\n";
+    $expectedOutput .= "Adding config retry_interval = 5\n";
+    $expectedOutput .= "---------------------------------------------------------------------\n";
+    $expectedOutput .= "Log in to  'http://$::gIPAddress:$::gAuxPort/api/v1.0/login'\n";
+    $expectedOutput .= "    Authentication status: 200 OK\n";
+    $expectedOutput .= "Undeploying vApp 'vCDTest'...\n";
+    $expectedOutput .= "vApp 'vCDTest' succesfully undeployed\n";
+    $expectedOutput .= "Found deployed resource w2k8-r2-dev-$jobId-test\n";
+    $expectedOutput .= "Cleaning up resources\n";
+    $expectedOutput .= "Deleting resource w2k8-r2-dev-$jobId-test\n";  
+    $expectedOutput .= "Resource 'w2k8-r2-dev-$jobId-test' deleted.\n";   
+    $expectedOutput .= "Deleting vApp 'vCDTest'...\n";
+    $expectedOutput .= "vApp 'vCDTest' succesfully deleted\n";
+    assertDiff( outdent($expectedOutput), $data, 'Cleanup successful output' );    
+};
+
+
+
+
+# Stop server
+stopServer();
+
+1;
+

@@ -1,0 +1,1200 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta name="generator" content="HTML Tidy for Windows (vers 25 March 2009), see www.w3.org" />
+  <meta content="text/html; charset=us-ascii" http-equiv="content-type" />
+
+  <title>ElectricFlow Plugin for VMware vCloud
+  Director</title>
+  <link rel="stylesheet" href="../../plugins/@PLUGIN_KEY@/pluginhelp.css" type="text/css" media="screen" />
+</head>
+
+<body>
+  <div class="help">
+    <h1>vCloud Director</h1>
+
+    <p>Plugin Version @PLUGIN_VERSION@</p>
+    <hr style="margin-left: -10px; margin-top: 10px; height: 1px; width: 100%; color: #5981BD;" noshade="noshade" />
+
+    <p>vCloud Director is VMware's cloud computing management tool.
+    It manages Infrastructure as a Service (IaaS) architectures by
+    monitoring and controlling various cloud-computing components,
+    such as security, virtual machine provisioning, billing, and
+    self-service access. It focuses on private and hybrid
+    cloud-computing infrastructures.</p>
+
+    <p>VMware vCloud Director builds on top of VMware vSphere,
+    enabling customers to pool datacenter resources, including
+    compute, storage, and networking into virtual datacenters
+    (VDCs), which can be offered to users on-demand through a
+    self-service portal interface so end users can consume virtual
+    resources with maximum agility. Consolidate datacenters and
+    deploy workloads on shared infrastructure with built-in
+    security and role-based access control. Migrate workloads
+    between different clouds and integrate existing management
+    systems using customer extensions,  application programming interfaces (APIs), and open cross-cloud
+    standards.</p>
+
+    <p>vCD enables IT organizations to act as true service
+    providers for the businesses they support, building hybrid
+    clouds leveraging the same technology used by a growing network
+    of service providers around the globe.</p>
+
+    <h2>VMware vCloud Director Links</h2>
+
+    <p>More information can be found at <a href="http://www.vmware.com/products/vcloud-director/">VMware
+    website</a>, <a href="http://www.vmware.com/support/pubs/vcd_pubs.html">VMware
+    vCloud Director Documentation</a> or <a href="http://pubs.vmware.com/vcloud-director-1-0/wwhelp/wwhimpl/js/html/wwhelp.htm#href=welcome/welcome.html">
+    VMware vCloud Director Online Library</a> .</p>
+
+    <p>Check the vCloud API Programming Guide at <a href="http://www.vmware.com/pdf/vcd_15_api_guide.pdf">vCloud
+    Director API</a>.</p>
+
+    <h2>ElectricFlow Integration to VMware vCloud
+    Director</h2><!-- The integration description should answer the questions:
+How deep does our integration go? Why should I care? What general
+functionality does the plugin include? What functionality does
+the plugin omit?
+-->
+
+    <p>The plugin communicates with vCloud Director through vCloud
+    application programming interface (API) that provides support
+    for developers who are building interactive clients of VMware
+    vCloud Director using a RESTful application development style.
+    The EC-vCloudDirector plugin allows users to automate and perform
+    datacenter operations on vCloud Director, providing a more
+    generic interface for managing resources.</p>
+
+    <p>vCloud API clients and vCloud Director servers communicate
+    over HTTP, exchanging representations of vCloud objects.</p>
+
+    <p>The plugin interact with vCloud Director API using PERL to
+    perform the following tasks:</p>
+
+    <ul>
+      <li>Create configurations to hold connection information.</li>
+
+      <li>Query for virtual machine and vApp information.</li>
+
+      <li>Perform actions on machines and vApps.</li>
+
+      <li>Capture, clone, delete, start, and deploy vApps.</li>
+
+      <li>Create ElectricFlow resources.</li>
+    </ul>
+
+    <p>This plugin provides two primary actions: Provision and
+    Cleanup, which work as a pair within a job.</p>
+
+    <h2>Integrated Version</h2>
+
+    <p>This plugin was developed and tested against VMware vCloud
+    Director version 5.5.</p>
+    
+    <p>This plugin supports vCloud API versions: 1.0 and 1.5.</p>
+
+    <p>This plugin works with ElectricFlow 3.6 and later.</p>
+
+    <h1>Plugin Procedures</h1>
+
+    <p>IMPORTANT: For all parameter descriptions below, required
+    parameters are shown in <span class="required">bold
+    italics</span>.</p>
+
+    <div id="CreateConfiguration"><a name="CreateConfiguration" id="CreateConfiguration"></a>
+
+    <h3>Plugin Configuration</h3>
+    <!-- If the plugin has separate configurations then include this section,
+otherwise omit this whole section. We don't need to have a configuration
+section that just says "There is no configuration for this plugin."
+-->
+
+    <p>Plugin configurations are sets of parameters that apply
+    across some or all of the plugin's procedures. They are
+    intended to reduce repetition of common values, create
+    predefined sets of parameters for end users, and securely
+    store credentials where needed. Each configuration is given a
+    unique name that is entered in designated parameters on
+    procedures that use them.<br />
+    <br />
+    Plugin configurations are created by going to the Electric
+    Commander "Administration" tab, then to the "Plugins" sub-tab.
+    On the right side of the line for the EC-vCloudDirector plugin,
+    click the "Configure" link to open the Configuration
+    page.</p>
+    <!-- For all parameters, the parameter name should be *exactly* the same as it appears in the
+    Parameter Panel, and the first sentence(s) of the description should be
+    the same as the tooltip (if there is one). After that, the parameter
+    description can go into greater detail about the parameter including
+    valid value ranges and examples.
+    -->
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="required">Configuration Name</td>
+
+          <td>Provide a unique name for the configuration, keeping
+          in mind that you may need to create additional
+          configurations over time. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Description</td>
+
+          <td>Provide a simple description for this configuration.
+          (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vCloudDirector Url</td>
+
+          <td>Provide a host name or IP address of the vCloud
+          Director server. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Configuration Credential
+          Parameters</td><!-- Describe *exactly* which user name and password go here.
+Is it for a particlar machine? Is it for a website? Is it for a
+particular function in the tool? Does it depend on another
+parameter (like a machine name) for its meaning?
+-->
+
+          <td>VMware vCloud Director account username and password.
+          This account must have enough privileges to perform API
+          functions. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vCloudDirector Organization</td>
+
+          <td>Indicate the organization for the authentication.
+          (Required)</td>
+        </tr>
+        
+        <tr>
+          <td class="required">Attempt Connection?</td>
+
+          <td>Attempt a connection to check credentials.
+          (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Debug Level</td>
+
+          <td>Level for output: 0=errors only, 1=normal headers and
+          responses, 2+=debugging information included.
+          (Required)</td>
+        </tr>
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/configuration_panel.png" /></div>
+
+    <div id="Provision"><a name="Provision" id="Provision"></a>
+
+    <h3>Provision</h3>
+
+    <p>This procedure allows users to instantiate a vApp template
+    and deploy it using the VMwarevCloud API. Run this procedure to
+    create and deploy a new vApp and to create resources for its
+    machines.<br />
+    The value for "vApp Template" must be the name of an existing
+    template in the catalog in "Template Catalog", in the
+    same way that "Template Catalog" and "Virtual Data Center" must be
+    part of the "vCloudDirector Organization." The plugin will
+    store properties on the ElectricFlow server at the
+    location in "Results location" and "Provision tag." If the
+     "Results location" field is empty, the default location in the job
+    (/myJob/vCloudDirector/deployed/"Provision tag") is used.</p>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="required">vCloudDirector Connection</td>
+
+          <td>Name of the configuration that holds the connection
+          information for vCloudDirector. This must reference a
+          valid existing configuration. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vCloudDirector Organization</td>
+
+          <td>Name of the organization that contains the virtual
+          datacenter and the catalog. This must reference an
+          existing Organization in vCloud Director. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Template Catalog</td>
+
+          <td>Name of the catalog that contains the vApp template.
+          (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Virtual Data Center</td>
+
+          <td>Name of the virtual datacenter where the vApp will be
+          instantiated and deployed. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vApp Template</td>
+
+          <td>Name of the vApp template to instantiate.
+          (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">New vApp Name</td>
+
+          <td>Name of the new vApp. (Required)</td>
+        </tr>
+
+       <tr>
+
+          <td class="required">New vApp hostname</td>
+
+
+
+          <td>Hostname of the new vApp. (Required)</td>
+
+        </tr>
+		
+		
+		
+        <tr>
+          <td>Network</td>
+
+          <td>Name for the network. If the vApp template includes
+          an ovf:Network element, the name you specify for the vApp
+          network must match the name specified in that element's
+          ovf:name attribute.</td>
+        </tr>
+
+        <tr>
+          <td>Parent Network</td>
+
+          <td>Name of the network to which the vApp network
+          connects.</td>
+        </tr>
+
+        <tr>
+          <td>Network deployment</td>
+
+          <td>
+            Network deployment option for VMs (default is bridged).
+
+            <ul>
+              <li style="list-style: none">Options:</li>
+
+              <li>bridged</li>
+
+              <li>isolated</li>
+
+              <li>natRouted</li>
+            </ul>
+          </td>
+        </tr>
+
+		
+        <tr>
+          <td>Resource Pool(s)</td>
+
+          <td>The ElectricFlow resource pool names to be
+          associated with the machines in this configuration if
+          resources are created.</td>
+        </tr>
+
+        <tr>
+          <td>Results location</td>
+
+          <td>The ElectricFlow location to store properties
+          (default is /myJob/vCloudDirector/deployed).</td>
+        </tr>
+
+        <tr>
+          <td class="required">Provision tag</td>
+
+          <td>The unique tag for this provision to keep it separate
+          from other provisions stored in the same results area
+          (default is $[jobStepId]). (Required)</td>
+        </tr>
+
+		<tr>
+
+		
+          <td>Create resources?</td>
+
+          <td>Select if the procedure must create resources for VMs in this vApp. </td>
+
+		  
+        </tr>
+		
+		
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/provision_panel.png" /></div>
+
+    <div id="Cleanup"><a name="Cleanup" id="Cleanup"></a>
+
+    <h3>Cleanup</h3>
+
+    <p>This procedure allows users to cleanup a vApp using the
+    VMwarevCloud API. It stops (powers off) and optionally undeploys or deletes a
+    vApp. Existing Commander resources associated with VMs in the
+    vApp that are cleaned up will be deleted.<br />
+    The value for "Virtual Data Center" must be part of the
+    "vCloudDirector Organization."  The procedure gets the
+    provision results from the "Deployed Results location" and "Deployed
+    tag" fields for a vApp. If the "Deployed Results location"
+    field is empty, the default location in the job is used:
+    /myJob/LabManager/deployed_configs/"Deployed tag".</p>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="required">vCloudDirector Connection</td>
+
+          <td>Name of the configuration that holds the connection
+          information for vCloudDirector. This must reference a
+          valid existing configuration. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vCloudDirector Organization</td>
+
+          <td>Name of the organization that contains the virtual
+          datacenter. This must reference an existing Organization
+          in vCloud Director. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Virtual Data Center</td>
+
+          <td>Name of the virtual datacenter that contains the vApp
+          to be cleaned up. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vApp Name</td>
+
+          <td>Name of the vApp that will be cleaned up.
+          (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Undeploy the vApp?</td>
+
+          <td>Select if the procedure must undeploy the vApp. If
+          checked, undeploy the vApp. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Delete the vApp?</td>
+
+          <td>Select if the procedure must delete the vApp. If
+          checked, delete the vApp. (Required)</td>
+        </tr>
+
+        <tr>
+          <td>Deployed Results location</td>
+
+          <td>The ElectricFlow location to get properties
+          (default is /myJob/vCloudDirector/deployed).</td>
+        </tr>
+
+        <tr>
+          <td class="required">Deployed tag</td>
+
+          <td>Tag to get the deployed vApp. (Required)</td>
+        </tr>
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/cleanup_panel.png" /></div>
+
+    <div id="Capture"><a name="Capture" id="Capture"></a>
+
+    <h3>Capture</h3>
+
+    <p>This procedure creates a vApp template from an instantiated
+    vApp and stores it in the catalog. Values for "Template
+    Catalog" and "Virtual Data Center" must be part of the
+    "vCloudDirector Organization." The value for "Source vApp Name" must be
+    contained in the "Virtual Data Center."</p>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="required">vCloudDirector Connection</td>
+
+          <td>Name of the configuration that holds the connection
+          information for vCloudDirector. This must reference a
+          valid existing configuration. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vCloudDirector Organization</td>
+
+          <td>Name of the organization that contains the virtual
+          datacenter and the catalog. This must reference an
+          existing Organization in vCloud Director. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Template Catalog</td>
+
+          <td>Name of the catalog that will contain the vApp
+          template. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Virtual Data Center</td>
+
+          <td>Name of the virtual datacenter that contains the vApp
+          that will be used. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Source vApp Name</td>
+
+          <td>Name of the vApp that will be used. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">New Template Name</td>
+
+          <td>Name for the new vApp template. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">New Template Description</td>
+
+          <td>Description for the new vApp template.
+          (Required)</td>
+        </tr>
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/capture_panel.png" /></div>
+
+    <div id="Clone"><a name="Clone" id="Clone"></a>
+
+    <h3>Clone</h3>
+
+    <p>This procedure allows the user to clone a vApp, save it in a
+    specified virtual datacenter, and make it available with the
+    new name. Values for "Virtual Data Center" and "Destination
+    Virtual Data Center" must be part of the "vCloudDirector
+    Organization."</p>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="required">vCloudDirector Connection</td>
+
+          <td>Name of the configuration that holds the connection
+          information for vCloudDirector. This must reference a
+          valid existing configuration. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vCloudDirector Organization</td>
+
+          <td>Name of the organization that contains the virtual
+          datacenter. This must reference an existing Organization
+          in vCloud Director. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Virtual Data Center</td>
+
+          <td>Name of the virtual datacenter that contains the vApp
+          that will be cloned. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vApp Name</td>
+
+          <td>Name of the vApp that will be cloned. Provide the
+          name of an existing vApp. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">New vApp Name</td>
+
+          <td>Name for the new vApp. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Destination Virtual Data Center</td>
+
+          <td>Name of the virtual datacenter where the vApp will be
+          cloned. (Required)</td>
+        </tr>
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/clone_panel.png" /></div>
+
+    <div id="GetvApp"><a name="GetvApp" id="GetvApp"></a>
+
+    <h3>GetvApp</h3>
+
+    <p>This procedure allows the user to get vApp information and save
+    it in a property. The value for "Virtual Data Center" must be part
+    of the "vCloudDirector Organization."</p>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="required">vCloudDirector Connection</td>
+
+          <td>Name of the configuration that holds the connection
+          information for vCloudDirector. This must reference a
+          valid existing configuration. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vCloudDirector Organization</td>
+
+          <td>Name of the organization that contains the virtual
+          datacenter. This must reference an existing Organization
+          in vCloud Director. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Virtual Data Center</td>
+
+          <td>Name of the virtual datacenter that contains the vApp
+          to get. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vApp Name</td>
+
+          <td>Name of the vApp to get. Enter the name of an
+          existing vApp. (Required)</td>
+        </tr>
+
+        <tr>
+          <td>Results location</td>
+
+          <td>The ElectricFlow location to store properties
+          (default is /myJob/vCloudDirector/deployed).</td>
+        </tr>
+
+        <tr>
+          <td class="required">Tag</td>
+
+          <td>Tag to store the vApp info. (Required)</td>
+        </tr>
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/getvapp_panel.png" /></div>
+
+    <div id="StartvApp"><a name="StartvApp" id="StartvApp"></a>
+
+    <h3>StartvApp</h3>
+
+    <p>This procedure allows the user to deploy (power on) an existing vApp and create resources for its
+    machines. Value for "Virtual Data Center" must be part
+    of the "vCloudDirector Organization." The plugin will
+    store properties on the ElectricFlow server at the
+    location provided in "Results location" and "Results tag". If the  
+     "Results location" is empty, the default location in the job
+    (/myJob/vCloudDirector/deployed/"Results tag") is used.</p>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+        <td class="required">vCloudDirector Connection</td>
+
+        <td>Name of the configuration that holds the connection
+        information for vCloudDirector. This must reference a valid
+        existing configuration. (Required)</td>
+      </tr>
+
+      <tr>
+        <td class="required">vCloudDirector Organization</td>
+
+        <td>Name of the organization that contains the virtual
+        datacenter. This must reference an existing Organization in
+        vCloud Director. (Required)</td>
+      </tr>
+
+      <tr>
+        <td class="required">Virtual Data Center</td>
+
+        <td>Name of the virtual datacenter that contains the vApp.
+        (Required)</td>
+      </tr>
+
+      <tr>
+        <td class="required">vApp Name</td>
+
+        <td>Name of the vApp that will be deployed (powered on).
+        (Required)</td>
+      </tr>
+
+      <tr>
+        <td>Create resources?</td>
+
+        <td>Select if the procedure must create resources for VMs
+        in this vApp.</td>
+      </tr>
+
+      <tr>
+        <td>Resource Pool(s)</td>
+
+        <td>The ElectricFlow resource pool names to be
+        associated with the machines in this configuration if
+        resources are created.</td>
+      </tr>
+
+      <tr>
+        <td>Results location</td>
+
+        <td>The ElectricFlow location to store properties
+        (default is /myJob/vCloudDirector/deployed).</td>
+      </tr>
+
+      <tr>
+        <td class="required">Results tag</td>
+
+        <td>Tag to store the deployed vApp information.
+        (Required)</td>
+      </tr>
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/startvapp_panel.png" /></div>
+
+    <div id="CloudManagerGrow"><a name="CloudManagerGrow" id="CloudManagerGrow"></a>
+
+    <h3>CloudManagerGrow</h3>
+
+    <p>This procedure allows the plugin to work with the CloudManager
+    plugin. It calls the Provision procedure and is run
+    by CloudManager.<br />
+    The value for "vApp Template" must be the name of an existing
+   template in the catalog  in "Template Catalog,", in the
+    same way that "Template Catalog" and "Virtual Data Center" must be
+    part of the "vCloudDirector Organization." The plugin will
+    store properties on the ElectricFlow server at the
+    location in the "Results location" and "Provision tag" fields.
+    If "Results location" is empty, the default location in the job
+    (/myJob/vCloudDirector/deployed/"Provision tag") is used.</p>
+    
+    <p><span class="required">IMPORTANT: </span>vApps with more than one Virtual Machine cannot be created due to how EC-vCloudDirector supports EC-CloudManager and the current EC-CloudManager model.</p>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="required">vCloudDirector Connection</td>
+
+          <td>Name of the configuration that holds the connection
+          information for vCloudDirector. This must reference a
+          valid existing configuration. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vCloudDirector Organization</td>
+
+          <td>Name of the organization that contains the virtual
+          datacenter and the catalog. This must reference an
+          existing Organization in vCloud Director. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Template Catalog</td>
+
+          <td>Name of the catalog that contains the vApp template.
+          (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Virtual Data Center</td>
+
+          <td>Name of the virtual datacenter where the vApp will be
+          instantiated and deployed. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">vApp Template</td>
+
+          <td>Name of the vApp template to instantiate.
+          (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">New vApp Name</td>
+
+          <td>Name of the new vApp. (Required)</td>
+        </tr>
+
+        <tr>
+          <td>Network</td>
+
+          <td>Name for the network. If the vApp template includes
+          an ovf:Network element, the name you specify for the vApp
+          network must match the name specified in that element's
+          ovf:name attribute.</td>
+        </tr>
+
+        <tr>
+          <td>Parent Network</td>
+
+          <td>Name of the network to which the vApp network
+          connects.</td>
+        </tr>
+
+        <tr>
+          <td>Network deployment</td>
+
+          <td>
+            Network deployment option for VMs (default is bridged).
+
+            <ul>
+              <li style="list-style: none">Options:</li>
+
+              <li>bridged</li>
+
+              <li>isolated</li>
+
+              <li>natRouted</li>
+            </ul>
+          </td>
+        </tr>
+
+        <tr>
+          <td>Results location</td>
+
+          <td>The ElectricFlow location to store properties
+          (default is /myJob/vCloudDirector/deployed).</td>
+        </tr>
+
+        <tr>
+          <td class="required">Provision tag</td>
+
+          <td>The unique tag for this provision to keep it separate
+          from other provisions stored in the same results area
+          (default is $[jobStepId]). (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Number of servers</td>
+
+          <td>Number of new servers. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">Resource Pool</td>
+
+          <td>Pool name for creating resources. (Required)</td>
+        </tr>
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/cloudmanager_grow_panel.png" /></div>
+
+    <div id="CloudManagerShrink"><a name="CloudManagerShrink" id="CloudManagerShrink"></a>
+
+    <h3>CloudManagerShrink</h3>
+
+    <p>This procedure allows the plugin to work with CloudManager
+    plugin. It calls the Cleanup procedure and is run by
+    CloudManager.</p>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="required">vCloudDirector Connection</td>
+
+          <td>Name of the configuration that holds the connection
+          information for vCloudDirector. This must reference a
+          valid existing configuration. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">List of Deployments</td>
+
+          <td>A list of deployments (previously created by
+          CloudManagerGrow) to stop. (Required)</td>
+        </tr>
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/cloudmanager_shrink_panel.png" /></div>
+
+    <div id="CloudManagerSync"><a name="CloudManagerSync" id="CloudManagerSync"></a>
+
+    <h3>CloudManagerSync</h3>
+
+    <p>This procedure allows the plugin to work with CloudManager
+    plugin. It calls the GetvApp procedure and is run by
+    CloudManager.</p>
+
+    <table class="grid">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="required">vCloudDirector Connection</td>
+
+          <td>Name of the configuration that holds the connection
+          information for vCloudDirector. This must reference a
+          valid existing configuration. (Required)</td>
+        </tr>
+
+        <tr>
+          <td class="required">List of Deployments</td>
+
+          <td>A list of deployments (previously created by
+          CloudManagerGrow) to check. (Required)</td>
+        </tr>
+      </tbody>
+    </table><img alt="" src="../../plugins/@PLUGIN_KEY@/images/parameters/cloudmanager_shrink_panel.png" /></div>
+
+    <h1>Use Cases and Examples</h1>
+    <!-- This section is for examples and use cases, including screenshots of the new Parameter Panel with example values filled in.
+Unfortunately, I can't tell you what exactly to put here, but it's OK to put what seems like too much! Include both parameter
+values and output where appropriate. Use a separate 'h2' header for each example. Under the h2 header try to stay with the style
+outline used above where possible.
+-->
+
+    <h2>Use Case 1: Provision, Consume, &amp; Cleanup Job</h2>
+
+    <p>Provision and cleanup work as a pair within a job.</p>
+
+    <p>The most common use for this plugin is to create a vApp,
+    create ElectricFlow resources assigned to virtual
+    machines in that vApp, use the resources to run some
+    operations, and the delete the resources and the vApp. To
+    accomplish these tasks, you must:</p>
+
+    <ol>
+      <li>Create a Plugin Configuration.</li>
+
+      <li>Provision a vCloudDirector vApp.</li>
+
+      <li>Create resources for this provision.</li>
+
+      <li>Use the created resources.</li>
+
+      <li>Delete the resources.</li>
+
+      <li>Delete the provisioned vApp.</li>
+    </ol>
+
+    <h4>Create a Plugin Configuration</h4>
+
+    <p>Plugin configurations are created by going to the Electric
+    Commander "Administration" tab, and then to the "Plugins" sub-tab.
+    On the right side of the line for the EC-vCloudDirector plugin,
+    click "Configure" to open the Configuration
+    page.<br />
+    Create a new configuration by specifying the requested
+    parameters:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/create_config.png" />
+
+    <p>After the configuration is created, you can see it listed in
+    "vCloudDirector Configurations", and  you are now able to
+    provision a new vApp.</p>
+
+    <h4>Provision</h4>
+
+    <p>Create a new Provision procedure, and enter values from 
+
+    your vCloudDirector server in the requested
+    fields:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/provision_parameters.png" />
+
+    <h4>Consume</h4>
+
+    <p>Create a new command step to use the resource. In 
+    this example, we will pick a resource from the pool and add
+    an ec-perl "sleep" step to use it for 30 seconds</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/consume_parameters.png" />
+
+    <h4>Cleanup</h4>
+
+    <p>Now the resource has been used and is ready to be cleaned
+    up, create a Cleanup step, enter values in the requested
+    fields:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/cleanup_parameters.png" />
+
+    <h4>Results and outputs</h4>
+
+    <p>After the job finished, you can see properties stored in
+    "Results Location."<br />
+    <img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/job.png" /></p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/results.png" />
+
+    <p>Provision output:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/provision_log.png" />
+
+    <p>Cleanup output:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/cleanup_log.png" />
+
+    <h2>Use Case 2: Provision, Capture, &amp; Cleanup Job</h2>
+
+    <p>Another common use of the plugin is to provision a vApp and
+    then create a vApp Template from it, store it in the catalog
+    and then cleanup the provision. To accomplish these tasks,
+    you must:</p>
+
+    <ol>
+      <li>Create a Plugin Configuration.</li>
+
+      <li>Provision a LabManager Configuration.</li>
+
+      <li>Create a template from the new vApp.</li>
+
+      <li>Delete the provisioned vApp.</li>
+    </ol>
+
+    <h4>Create a Plugin Configuration</h4>
+
+    <p>Plugin configurations are created by going to the Electric
+    Commander "Administration" tab, then to the "Plugins" sub-tab.
+    On the right side of the line for the LabManager plugin, click 
+    "Configure" to open the Configuration page.</p>
+
+    <h4>Provision</h4>
+
+    <p>Create a new Provision procedure, enter values from your vCloudDirector
+
+    server in the requested fields:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/provision_parameters.png" />
+
+    <h4>Capture</h4>
+
+    <p>Create a new Capture procedure, enter values from your vCloudDirector
+
+    server in the requested fields:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_2/capture_parameters.png" />
+
+    <h4>Cleanup</h4>
+
+    <p>Now the resource has been used and is ready to be cleaned
+    up, create a Cleanup step, enter values in the requested
+    fields:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_1/cleanup_parameters.png" />
+
+    <h4>Results and outputs</h4>
+
+    <p>After the job finished, you can see properties stored in
+    "Results Location."<br />
+    <img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_2/job.png" /></p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_2/results.png" />
+
+    <p>Provision output:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_2/provision_log.png" />
+
+    <p>Capture output:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_2/capture_log.png" />
+
+    <p>Cleanup output:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_2/cleanup_log.png" />
+
+    <h1>Release Notes</h1>
+    <h2>@PLUGIN_KEY@ 1.4.6</h2>
+    <ul>
+        <li>Fixed non-ascii characters in plugin code.</li>
+    </ul>
+    <h2>@PLUGIN_KEY@ 1.4.5</h2>
+    <ul>
+      <li>VM name now will be changed after provision from template name to VM hostname.</li> 
+    </ul>
+    <h2>@PLUGIN_KEY@ 1.4.3</h2>
+    <ul>
+      <li>Fixed an issue with usernames and other config parameters containing @ and other special symbols.</li>
+      <li>Fixed wron plugin behaviour when natRouted vApp was incorrectly provisioned.</li>
+      <li>Added v5.5 vCloudDirector API support</li>
+    </ul>
+    <h2>@PLUGIN_KEY@ 1.3.8</h2>
+    <ul>
+        <li>Fixed issue with configurations being cached for IE.</li>
+    </ul>
+
+    <h2>@PLUGIN_KEY@ 1.3.6</h2>
+
+    <ul>
+        <li>Updated help document to reflect the plugin has been tested against vCloudDirector 5.5.</li>
+    </ul>
+
+    <h2>@PLUGIN_KEY@ 1.3.5</h2>
+    <ul>
+      <li>Resource now will be created after full vapp deployment.</li>
+      <li>Added new parameter for fine tuning &#x2013; DNS wait time.</li>
+      <li>
+        Fixed a bug in the provision procedure relating to provisioning from a vApp template in a public catalog outside of the organization.
+        
+        Note: To ensure backwards compatibility the search order for finding vApp templates is currently vApps within the virtual data center (vdc) and then vApps that live in the catalog. In the next minor version of this plugin we will only search the specified catalog and stop searching the vdc. Review all invocations of the provision procedure to ensure the vApp template specified exists within the catalog specified.
+      </li>
+    </ul>
+
+    <h2>@PLUGIN_KEY@ 1.3.4</h2>
+    
+    <ul>
+      <li>Fixed AttemptConnection</li>
+      <li>Added possibility to enable/disable resource creation during provision step.</li>
+	  
+	  <li>Updated the Help file with the enhancements from version 1.3.2 to this version.</li>
+    </ul>
+    
+    <h2>@PLUGIN_KEY@ 1.3.3</h2>
+    
+    <ul>
+      <li>Added VM hostname parameter for provision step.</li>
+    </ul>
+
+    <h2>@PLUGIN_KEY@ 1.3.1</h2>
+
+    <ul>
+      <li>Prefered external address over internal address.</li>          
+    </ul>
+    
+    <h2>@PLUGIN_KEY@ 1.3.0</h2>
+
+    <ul>
+      <li>Added support to vCloud API 1.5.</li>          
+    </ul> 
+    
+    <h2>@PLUGIN_KEY@ 1.2.0</h2>
+
+    <ul>
+      <li>Added procedure Start vApp.</li>      
+      <li>Applied code template.</li>      
+    </ul> 
+    
+    <h2>@PLUGIN_KEY@ 1.1.2</h2>
+
+    <ul>
+      <li>Attempt connection on CreateConfiguration.</li>      
+    </ul>
+    
+    <h2>@PLUGIN_KEY@ 1.1.1</h2>
+
+    <ul>
+      <li>Added note to CloudManagerGrow procedure.</li>      
+    </ul>
+
+    <h2>@PLUGIN_KEY@ 1.1.0</h2>
+
+    <ul>
+      <li>Added procedures GetvApp and CloudManagerSync.</li>
+
+      <li>Added aditional postp matchers.</li>
+
+      <li>Fixed CloudManagerShrink.</li>
+    </ul>
+
+    <h2>@PLUGIN_KEY@ 1.0.5</h2>
+
+    <ul>
+      <li>Procedure name(s) were changed in the step picker
+      section.</li>
+    </ul>
+
+    <h2>@PLUGIN_KEY@-1.0.4</h2>
+
+    <ul>
+      <li>Fixed configuration description.</li>
+    </ul>
+
+    <h2>@PLUGIN_KEY@-1.0.3</h2>
+
+    <ul>
+      <li>Deleted CloudManagerGrow And CloudManagerShrink from
+      stepPicker.</li>
+
+      <li>Change Help page style</li>
+    </ul>
+
+    <h2>@PLUGIN_KEY@-1.0.2</h2>
+
+    <ul>
+      <li>Added help link to each procedure.</li>
+
+      <li>Parameter Panel XML Cleanup.</li>
+    </ul>
+
+    <h2>@PLUGIN_KEY@-1.0.1</h2>
+
+    <ul>
+      <li>Added improvements to help page.</li>
+
+      <li>Added detailed Use Cases.</li>
+    </ul>
+
+    <h2>EC-vCloudDirector-1.0.0</h2>
+
+    <ul>
+      <li>Configuration Management.</li>
+
+      <li>Procedures: Provision, Clone, Cleanup and Capture.</li>
+
+      <li>Implemented CloudManager support</li>
+
+      <li>Implemented XML parameter panel</li>
+
+      <li>Applied new help page template.</li>
+    </ul>
+  </div>
+</body>
+</html>

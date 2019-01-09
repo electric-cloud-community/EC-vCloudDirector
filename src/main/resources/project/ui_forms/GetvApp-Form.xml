@@ -1,0 +1,45 @@
+<editor>
+    <help>/commander/pages/@PLUGIN_NAME@/@PLUGIN_KEY@_help?s=Administration&amp;ss=Plugins#GetvApp</help>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Connection:</label>
+        <property>connection_config</property>
+        <required>1</required>
+        <documentation>Name of the configuration which holds the connection information for vCloudDirector. This must reference a valid existing configuration.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Organization:</label>
+        <property>vcloud_organization</property>
+        <required>1</required>
+        <documentation>Name of the organization that contains the virtual datacenter. This must reference an existing Organization in vCloud Director.</documentation>
+    </formElement>        
+    <formElement>
+        <type>entry</type>
+        <label>Virtual Data Center:</label>
+        <property>vcloud_virtual_datacenter</property>
+        <required>1</required>
+        <documentation>Name of the virtual datacenter that contains the vApp to get.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vApp Name:</label>
+        <property>vcloud_vappname</property>
+        <required>1</required>
+        <documentation>Name of the vApp to get.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Results location:</label>
+        <property>results</property>
+        <required>0</required>
+        <documentation>The ElectricCommander location to store properties (default is /myJob/vCloudDirector/deployed).</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Tag:</label>
+        <property>tag</property>
+        <required>1</required>
+        <documentation>Tag to store the vApp info.</documentation>
+    </formElement>        
+</editor>

@@ -1,0 +1,57 @@
+# -*-Perl-*-
+
+# ntest.common
+#
+# Copyright (c) 2005-2011 Electric Cloud, Inc.
+# All rights reserved
+
+use strict;
+use warnings;
+use ECTest;
+
+initCommander();
+
+$::gPlugin_name = $::ENV{PLUGIN_NAME};
+$::gPlugin_key  = $::gPlugin_name;
+$::gPlugin_key =~ s/-[^-]+$//;
+$::gPlugin_driver = $::gPlugin_key;
+
+$::gRunFlag = "RUNEVCLOUDDIRECTORTESTS";
+
+# win/lin matches the chronic3 procedure platform property
+$::gPlatform = "lin";
+if ( $^O eq "MSWin32" ) {
+    $::gPlatform = "win";
+}
+
+if ( defined( $::ENV{$::gRunFlag} ) && $::ENV{$::gRunFlag} eq "0" ) {
+    print "Skipping system tests\n";
+    exit 0;
+}
+
+$::N = $adminSession;
+my $xpath = $::N->getPlugin($::gPlugin_key);
+$::gPlugin_name       = $xpath->findvalue('//pluginName')->value;
+$::gPlugin_ver        = $xpath->findvalue('//pluginVersion')->value;
+$::gCreatePrivateDirs = 1;
+$::gECdtTestFileDir   = "$::gTestFileDir/../../EC-vCloudDirector/systemtest";
+
+$::vCloudDirector =
+  $::N->getProperty("/plugins/EC-vCloudDirector/projectName")
+  ->findvalue("//value")->string_value;
+
+$::gJobId = $::ENV{COMMANDER_JOBID} || "1";
+$::gAgentResource = "local";
+
+# show all key variables for debugging
+print "==========vCloudDirector NTEST SETUP============\n";
+print "key     : $::gPlugin_key\n";
+print "ver     : $::gPlugin_ver\n";
+print "name    : $::gPlugin_name\n";
+print "driver  : $::gPlugin_driver\n";
+print "resource: $::gAgentResource\n";
+print "platform: $::gPlatform\n";
+print "jobid   : $::gJobId\n";
+print "\n";
+
+1;

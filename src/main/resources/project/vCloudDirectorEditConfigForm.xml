@@ -1,0 +1,73 @@
+<editor>
+    <formElement>
+        <type>entry</type>
+        <label>Description:</label>
+        <property>desc</property>
+        <documentation>Provide a simple description for this configuration.</documentation>
+    </formElement>
+	<formElement>
+        <type>entry</type>
+        <label>vCloudDirector Url:</label>
+        <property>vclouddirector_url</property>
+        <documentation>Provide the host name or IP address of the vCloud Director server.</documentation>
+		<required>1</required>
+    </formElement>
+    <formElement>
+        <type>credential</type>
+        <label>Login as:</label>
+        <property>credential</property>
+        <required>1</required>
+        <documentation>VMware vCloud Director account username/password. This account must have enough privileges to perform API funtions.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>vCloudDirector Organization:</label>
+        <property>vclouddirector_conf_org</property>
+        <documentation>Indicate the organization for the authentication.</documentation>
+		<required>1</required>
+    </formElement>
+    <formElement>
+        <type>checkbox</type>
+        <label>Attempt Connection?:</label>
+        <property>attempt</property>
+        <checkedValue>1</checkedValue>
+        <uncheckedValue>0</uncheckedValue>
+        <initiallyChecked>1</initiallyChecked>        
+        <documentation>Attempt a connection to check credentials.</documentation>
+        <required>1</required>
+    </formElement>
+    <formElement>
+        <type>checkbox</type>
+        <label>Retry Request on failure?:</label>
+        <property>retry_on_failure</property>
+        <checkedValue>1</checkedValue>
+        <uncheckedValue>0</uncheckedValue>
+        <initiallyChecked>0</initiallyChecked>        
+        <documentation>Retry a request up to 10 times on VCD error.</documentation>
+        <required>1</required>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Retry attempts count:</label>
+        <property>retry_attempts_count</property>
+        <value>10</value>
+        <documentation>Sets retry attempts count when Retry Request on Failure is enabled.</documentation>
+        <required>1</required>
+    </formElement>
+
+    <formElement>
+        <type>entry</type>
+        <label>Retry interval:</label>
+        <property>retry_interval</property>
+        <value>5</value>
+        <documentation>Interval between attempts if Retry Request on Failure is enabled.</documentation>
+        <required>1</required>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Debug Level:</label>
+        <property>debug</property>
+        <documentation>Level for output: 0=errors only, 1=normal headers and responses, 2+=debugging information included.</documentation>
+        <required>1</required>
+    </formElement>
+</editor>
