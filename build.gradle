@@ -20,7 +20,7 @@ buildscript {
 
 group = 'com.electriccloud'
 description = 'Plugins : EC-vCloudDirector'
-version = '1.4.6'
+version = '1.4.7'
 
 apply plugin: 'flow-gradle-plugin'
 apply plugin: 'license'

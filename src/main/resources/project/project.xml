@@ -6,6 +6,12 @@
         <description>Integration with vCloudDirector</description>
         <workspaceName/>
         <propertySheet>
+            <!-- Improvement for ECPRESOURCEVCLOUD-91 -->
+            <property>
+                <propertyName>ec_icon</propertyName>
+                <value>images/icon-plugin.svg</value>
+            </property>
+            <!-- End of improvement for ECPRESOURCEVCLOUD-91 -->
             <property>
                 <propertyName>vclouddirector_driver</propertyName>
                 <description>Home for perl code</description>
