@@ -9,6 +9,7 @@
     <author>Electric Cloud</author>
     <authorUrl>http://www.electric-cloud.com/support</authorUrl>
     <category>Resource Management</category>
+    <ecSupportLevel>10</ecSupportLevel>
     <commander-version min="3.6"/>
     <components>
         <component name="ConfigurationManagement">

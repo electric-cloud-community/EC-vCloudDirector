@@ -1052,6 +1052,10 @@ outline used above where possible.
     <p>Cleanup output:</p><img alt="" src="../../plugins/@PLUGIN_KEY@/images/use_cases/Case_2/cleanup_log.png" />
 
     <h1>Release Notes</h1>
+    <h2>@PLUGIN_KEY@ 1.4.7</h2>
+    <ul>
+        <li>The plugin icon has been updated.</li>
+    </ul>
     <h2>@PLUGIN_KEY@ 1.4.6</h2>
     <ul>
         <li>Fixed non-ascii characters in plugin code.</li>
